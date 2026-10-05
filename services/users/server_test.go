@@ -22,9 +22,7 @@ func TestHandler(t *testing.T) {
 		path       string
 		body       string
 		wantStatus int
-		// wantBody is compared as JSON. Empty means the body is not checked,
-		// which is used for responses the standard library mux writes itself.
-		wantBody string
+		wantBody   string // compared as JSON
 	}{
 		{
 			name:       "list users returns the seeded users",
@@ -123,12 +121,6 @@ func TestHandler(t *testing.T) {
 			wantStatus: http.StatusRequestEntityTooLarge,
 			wantBody:   `{"error":"request body too large"}`,
 		},
-		{
-			name:       "unsupported method",
-			method:     http.MethodDelete,
-			path:       "/users/1",
-			wantStatus: http.StatusMethodNotAllowed,
-		},
 	}
 
 	for _, tt := range tests {
@@ -141,11 +133,76 @@ func TestHandler(t *testing.T) {
 			if rec.Code != tt.wantStatus {
 				t.Fatalf("status = %d, want %d (body: %s)", rec.Code, tt.wantStatus, rec.Body.String())
 			}
-			if tt.wantBody == "" {
-				return
+			if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+				t.Errorf("Content-Type = %q, want application/json", ct)
+			}
+			assertJSONEqual(t, rec.Body.String(), tt.wantBody)
+		})
+	}
+}
+
+func TestUnmatchedRequestsReturnJSONErrors(t *testing.T) {
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		wantStatus int
+		wantBody   string
+		wantAllow  string
+	}{
+		{
+			name:       "unknown route",
+			method:     http.MethodGet,
+			path:       "/nope",
+			wantStatus: http.StatusNotFound,
+			wantBody:   `{"error":"not found"}`,
+		},
+		{
+			name:       "unknown sub-route of a known one",
+			method:     http.MethodGet,
+			path:       "/users/1/orders",
+			wantStatus: http.StatusNotFound,
+			wantBody:   `{"error":"not found"}`,
+		},
+		{
+			name:       "root path",
+			method:     http.MethodGet,
+			path:       "/",
+			wantStatus: http.StatusNotFound,
+			wantBody:   `{"error":"not found"}`,
+		},
+		{
+			name:       "wrong method on a single user",
+			method:     http.MethodDelete,
+			path:       "/users/1",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantBody:   `{"error":"method not allowed"}`,
+			wantAllow:  "GET, HEAD",
+		},
+		{
+			name:       "wrong method on the collection",
+			method:     http.MethodPut,
+			path:       "/users",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantBody:   `{"error":"method not allowed"}`,
+			wantAllow:  "GET, HEAD, POST",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+
+			newTestHandler().ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, nil))
+
+			if rec.Code != tt.wantStatus {
+				t.Fatalf("status = %d, want %d (body: %s)", rec.Code, tt.wantStatus, rec.Body.String())
 			}
 			if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
 				t.Errorf("Content-Type = %q, want application/json", ct)
+			}
+			if allow := rec.Header().Get("Allow"); allow != tt.wantAllow {
+				t.Errorf("Allow = %q, want %q", allow, tt.wantAllow)
 			}
 			assertJSONEqual(t, rec.Body.String(), tt.wantBody)
 		})

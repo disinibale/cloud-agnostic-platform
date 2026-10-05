@@ -102,6 +102,8 @@ It writes one result per event to stdout and logs to stderr:
 | `GET /users/{id}`  | `200` with the user, or `404`                                                      |
 | `POST /users`      | `201` with the new user; `400` if `name` or `email` is missing or the body is not valid JSON; `413` over 1 MiB |
 
+Unknown paths return `404` and unsupported methods return `405` with an `Allow` header. Every error has a JSON body such as `{"error":"not found"}`.
+
 Starts with three users: Alice, Bob and Carol, all at `example.com`.
 
 | Variable | Default | Purpose          |
