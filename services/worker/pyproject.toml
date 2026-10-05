@@ -1,0 +1,38 @@
+[project]
+name = "worker"
+version = "0.1.0"
+description = "Processes order-created events and reports one result per event."
+requires-python = ">=3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.16.10",
+]
+
+[build-system]
+requires = ["uv_build==0.12.23"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = "==0.12.23"
+
+[tool.pytest]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "SIM", # simplify
+    "PT",  # pytest style
+    "RUF", # ruff-specific
+]
