@@ -1,0 +1,5 @@
+# esbuild (used by tsx and Vitest) ships its binary as a platform-specific
+# optional dependency, so its postinstall script is not needed. Denying it keeps
+# installs free of third-party lifecycle scripts.
+allowBuilds:
+  esbuild: false
