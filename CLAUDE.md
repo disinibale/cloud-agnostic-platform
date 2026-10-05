@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project memory for Claude Code. Read this before every task. `SPEC.md` describes the initial Phase 0 scaffold; this file holds the rules that apply for the life of the repo.
+Project memory for Claude Code. Read this before every task. It holds the rules that apply for the life of the repo.
 
 ## What this repo is
 
@@ -33,6 +33,15 @@ make -C services/<name> <target>   # one service only
 ```
 
 Always run `make lint && make test` before saying a task is done.
+
+## Environment
+
+- **Make:** recipes use a POSIX shell. On Windows, run `make` from Git Bash, not PowerShell or cmd.
+- **Line endings:** `.gitattributes` forces LF and must stay. With `core.autocrlf=true` (common on Windows), CRLF checkouts break gofmt, Prettier and Make recipes.
+- **orders:** Node is pinned through `devEngines.runtime` in `package.json` (pnpm downloads it), pnpm through `packageManager`. Run pnpm as `corepack pnpm`, never a global pnpm. Corepack is bundled with Node 24 only.
+- **orders:** esbuild's install script is intentionally denied in `services/orders/pnpm-workspace.yaml`; its binary comes from an optional dependency. Do not approve it.
+- **users:** `go.mod` pins the Go version and Go downloads that toolchain. The `gofmt` on PATH may be a different version, so lint and fmt must use the pinned toolchain's gofmt (`$(go env GOROOT)/bin/gofmt`).
+- **worker:** Python 3.14 is pinned through `.python-version`, uv through `required-version` in `pyproject.toml`. Run tools with `uv run --locked`.
 
 ## Who builds what
 
@@ -75,6 +84,7 @@ For these areas, act as a **senior SRE reviewer**: explain concepts, review the 
 - Conventional Commits (`feat(orders): …`, `fix(users): …`, `docs: …`, `build: …`, `ci: …`).
 - Small, focused commits. One logical change per commit.
 - Never push, force-push, rewrite history or create remotes unless explicitly asked.
+- Commits made by Claude Code keep the `Co-Authored-By: Claude` trailer. Never remove existing trailers.
 
 ## Decisions
 
